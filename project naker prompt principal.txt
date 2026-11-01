@@ -1,0 +1,83 @@
+# PROJETO: Naker Distribuidor
+
+Você é um engenheiro full-stack sênior. Construa do zero, de ponta a ponta, o sistema "Naker Distribuidor": uma plataforma de catálogo de vendas para distribuidores. Cada distribuidor faz login, monta seu catálogo de produtos (foto, nome e preço), personaliza preços por cliente e compartilha o catálogo com clientes que não têm login, por link ou por imagem de cardápio.
+
+## 1. STACK (obrigatória)
+- **Front-end:** Next.js (App Router) + TypeScript, 100% responsivo (mobile-first), funcionando bem em celular e desktop.
+- **Estilização:** Tailwind CSS + shadcn/ui.
+- **Back-end/API:** Node.js com NestJS + TypeScript, API REST documentada com Swagger/OpenAPI.
+- **Banco de dados:** PostgreSQL com Prisma ORM e migrations.
+- **Autenticação:** JWT (access token + refresh token em cookie httpOnly), senhas com bcrypt/argon2.
+- **Upload de imagens:** abstração de storage com implementação local para desenvolvimento e compatível com S3/Cloudinary para produção. Validar tipo e tamanho e otimizar/redimensionar as imagens.
+- **Infra:** Docker Compose (postgres + api + web), arquivos .env.example e README com passo a passo para rodar.
+- **Idioma/moeda:** português do Brasil e Real (R$), com formatação correta de valores.
+
+## 2. FUNCIONALIDADES
+
+### 2.1 Autenticação
+- Cadastro, login, logout e recuperação de senha (estrutura pronta, e-mail pode ser mockado em dev).
+- Cada usuário (distribuidor) enxerga e edita somente os seus dados.
+
+### 2.2 Catálogo do distribuidor (área logada)
+- CRUD de produtos: **nome, preço base, foto** (obrigatórios), mais descrição, categoria e status ativo/inativo (opcionais).
+- Adicionar e remover itens de forma simples, com confirmação ao excluir.
+- Busca, filtro por categoria e ordenação.
+- Visualização em grade de cards (foto, nome, preço), pensada para mobile.
+
+### 2.3 Clientes e preços personalizados
+- CRUD de clientes (nome, telefone/WhatsApp, observações).
+- Cada cliente pode ter **preço diferente por produto** (sobrescreve o preço base). Se não houver preço personalizado, vale o preço base.
+- Atalho para aplicar desconto/acréscimo percentual em todos os produtos de um cliente, com possibilidade de ajustar item a item depois.
+- Tela de edição de preços do cliente em formato de tabela editável (produto, preço base, preço do cliente).
+
+### 2.4 Compartilhamento do catálogo (usuário deslogado)
+- **Link público geral:** `/catalogo/[slug]` mostra o catálogo com preços base.
+- **Link público por cliente:** `/c/[token]` com token longo e imprevisível, mostrando o catálogo com os preços daquele cliente.
+- Páginas públicas sem login, somente leitura, rápidas, com SEO básico e pré-visualização boa ao compartilhar no WhatsApp (Open Graph).
+- Botão "Copiar link" e "Compartilhar no WhatsApp" (mensagem pré-formatada).
+- Possibilidade de desativar ou regenerar o link de um cliente.
+- Botão "Pedir pelo WhatsApp" na página pública: o cliente seleciona itens e quantidades e envia o pedido formatado ao número do distribuidor.
+
+### 2.5 Cardápio virtual em imagem
+- Botão "Gerar cardápio em imagem" (geral ou por cliente, com os preços dele).
+- Gera um PNG/JPG vertical (ex.: 1080x1920 e opção 1080x1080) pronto para enviar por WhatsApp/Instagram, contendo logo da águia, nome Naker Distribuidor (ou nome do distribuidor), produtos com foto, nome e preço, data de geração e contato.
+- Se houver muitos produtos, dividir automaticamente em várias imagens/páginas.
+- Implementar com `next/og` (satori) ou html-to-image, a opção mais estável. Oferecer botões de download e compartilhar.
+
+## 3. MODELO DE DADOS (sugestão, refine se necessário)
+- User (id, nome, email, senhaHash, telefone, slug, logoUrl, criadoEm)
+- Product (id, userId, nome, descricao, precoBase, imagemUrl, categoriaId, ativo)
+- Category (id, userId, nome)
+- Customer (id, userId, nome, telefone, observacoes, tokenPublico, linkAtivo)
+- CustomerPrice (id, customerId, productId, preco) com único (customerId, productId)
+- Índices e relações com onDelete apropriado. Valores monetários em centavos (Int) ou Decimal, nunca float.
+
+## 4. DESIGN, tema Águia Imperial (preto e dourado)
+- **Paleta:** preto profundo (#0A0A0A / #111), dourado (#D4AF37 como principal, #B8860B para hover/bordas, #F5E6A8 para detalhes claros), cinza grafite para superfícies (#1A1A1A) e branco-pérola para textos (#F5F5F0).
+- **Tipografia:** títulos serifados elegantes (ex.: Playfair Display ou Cinzel), texto em sans-serif limpa (ex.: Inter).
+- **Identidade:** logo/ícone de águia em SVG (estilizada, geométrica, de asas abertas), usada no header, login, favicon e na imagem do cardápio. Nome "Naker Distribuidor" no header.
+- **Estilo:** premium, sofisticado, bordas finas douradas, sombras suaves, gradientes sutis de dourado em botões primários, microanimações discretas.
+- **Dark mode como padrão.** Garanta contraste e acessibilidade (WCAG AA).
+- Cards de produto com foto em destaque, preço em dourado e botões grandes e fáceis de tocar no mobile.
+- Navegação mobile com menu inferior ou drawer; desktop com sidebar.
+
+## 5. REQUISITOS NÃO FUNCIONAIS
+- Validação de dados com class-validator/zod, DTOs tipados e tratamento de erros padronizado.
+- Segurança: CORS configurado, rate limit em login, helmet, sanitização, autorização por dono do recurso em todas as rotas.
+- Paginação nas listagens, loading states, skeletons e mensagens de erro amigáveis.
+- Código organizado em módulos, limpo e comentado nos pontos importantes.
+- Testes: unitários nos serviços principais (preço personalizado, autorização) e um fluxo e2e básico.
+- Seed com dados de exemplo (1 distribuidor, 10 produtos, 3 clientes com preços diferentes).
+
+## 6. ENTREGÁVEIS E ORDEM DE TRABALHO
+Trabalhe em etapas, validando cada uma antes de seguir:
+1. Estrutura do monorepo (`/apps/web`, `/apps/api`), Docker Compose e configuração.
+2. Banco: schema Prisma, migrations e seed.
+3. API: auth, produtos, categorias, clientes, preços personalizados, endpoints públicos, upload.
+4. Front: design system (tema preto e dourado), layout, login e cadastro.
+5. Front: catálogo (CRUD) e clientes com edição de preços.
+6. Páginas públicas (`/catalogo/[slug]` e `/c/[token]`) e pedido via WhatsApp.
+7. Geração do cardápio em imagem.
+8. Testes, README completo e revisão final de responsividade e segurança.
+
+Ao final de cada etapa, resuma o que foi feito e o que vem a seguir. Se alguma decisão importante não estiver especificada, escolha a opção mais simples e robusta e registre a decisão no README.

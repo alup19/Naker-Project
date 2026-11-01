@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: naker
+      POSTGRES_PASSWORD: naker
+      POSTGRES_DB: naker
+    ports: ["5432:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U naker -d naker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  api:
+    build: ./apps/api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://naker:naker@postgres:5432/naker?schema=public
+    ports: ["4000:4000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    volumes: ["./apps/api/uploads:/app/uploads"]
+  web:
+    build: ./apps/web
+    env_file: .env
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      API_URL: http://api:4000
+    ports: ["3000:3000"]
+    depends_on: [api]
+volumes:
+  postgres_data:

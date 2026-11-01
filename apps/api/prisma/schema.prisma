@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  name         String
+  email        String         @unique
+  passwordHash String
+  phone        String?
+  slug         String         @unique
+  logoUrl      String?
+  themeMode    String         @default("dark")
+  accentColor  String         @default("gold")
+  createdAt    DateTime       @default(now())
+  products     Product[]
+  categories   Category[]
+  customers    Customer[]
+  resetTokens  PasswordReset[]
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  priceCents  Int
+  imageUrl    String?
+  active      Boolean         @default(true)
+  categoryId  String?
+  createdAt   DateTime        @default(now())
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  prices      CustomerPrice[]
+
+  @@index([userId, active])
+  @@index([categoryId])
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  userId   String
+  name     String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([userId, name])
+}
+
+model Customer {
+  id          String          @id @default(cuid())
+  userId      String
+  name        String
+  phone       String
+  notes       String?
+  publicToken String?         @unique
+  linkActive  Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prices      CustomerPrice[]
+
+  @@index([userId, name])
+}
+
+model CustomerPrice {
+  id         String   @id @default(cuid())
+  customerId String
+  productId  String
+  priceCents Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, productId])
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
